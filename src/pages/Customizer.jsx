@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSnapshot } from "valtio";
 
@@ -28,6 +28,31 @@ const Customizer = () => {
     logoShirt: true,
     stylishShirt: false,
   });
+
+  const tabContentRef = useRef(null);
+
+  const closeTabContent = () => {
+    setActiveEditorTab(null);
+  }
+
+  const handleOutsideClick = (event) => {
+    if (tabContentRef.current && !tabContentRef.current.contains(event.target)) {
+      closeTabContent();
+    }
+  };
+
+  useEffect(() => {
+    if (activeEditorTab) {
+      document.addEventListener("click", handleOutsideClick);
+    } else {
+      document.removeEventListener("click", handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    }
+  }, [activeEditorTab])
+
   const generateTabContent = (e) => {
     switch (activeEditorTab) {
       case "colorpicker":
@@ -66,8 +91,6 @@ const Customizer = () => {
       })
 
       const data = await response.json();
-
-      console.log("data => ", data)
 
       handleDecals(type, `data:image/png;base64,${data.photo}`)
     } catch (error) {
@@ -120,12 +143,14 @@ const Customizer = () => {
     })
   };
 
+
   return (
     <AnimatePresence>
       {!snap.intro && (
         <>
           <motion.div
             key="custom"
+            ref={tabContentRef}
             className="absolute left-0 top-0 z-10 min-h-screen flex items-center"
             {...slideAnimation("left")}
           >
@@ -133,7 +158,7 @@ const Customizer = () => {
               {EditorTabs.map((tab) => (
                 <Tab key={tab.name} tab={tab} handleClick={() => { setActiveEditorTab(tab.name) }} />
               ))}
-              {generateTabContent()}
+              {activeEditorTab && generateTabContent()}
             </div>
           </motion.div>
 
